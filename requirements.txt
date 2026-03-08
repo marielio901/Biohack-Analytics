@@ -1,0 +1,6 @@
+streamlit>=1.41.0
+pandas>=2.2.3
+plotly>=5.24.1
+edge-tts>=7.2.7
+
+psycopg[binary]>=3.2.3

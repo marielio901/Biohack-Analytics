@@ -34,7 +34,7 @@ Para deploy na Streamlit Community Cloud, cole os mesmos campos no painel `App s
 Exemplo:
 
 ```toml
-SUPABASE_DB_URL = "postgresql://postgres:SUA_SENHA@SEU_HOST/postgres"
+SUPABASE_DB_URL = "postgresql://postgres.PROJECT_REF:SUA_SENHA@aws-0-REGIAO.pooler.supabase.com:5432/postgres?sslmode=require"
 AXIEL_TOGETHER_API_KEY = "sua-chave-aqui"
 AXIEL_CHAT_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
 AXIEL_TRANSCRIBE_MODEL = "openai/whisper-large-v3"
@@ -46,6 +46,8 @@ SUPABASE_CONNECT_RETRIES = 3
 ```
 
 Também são aceitas variáveis de ambiente equivalentes, incluindo `TOGETHER_API_KEY` e os nomes legados `STOCKPILOT_*`.
+
+Para deploy, nao use a conexao direta `db.<project>.supabase.co:5432`. Na Streamlit Community Cloud, prefira a URL do `Session pooler` ou do `Transaction pooler` no painel `Connect` do Supabase.
 
 ## Deploy na Streamlit Community Cloud
 
@@ -81,5 +83,6 @@ Secrets opcionais:
 Checklist antes de publicar:
 
 - `SUPABASE_DB_URL` usando a credencial real do banco
+- `SUPABASE_DB_URL` apontando para o pooler do Supabase, nao para `db.<project>.supabase.co:5432`
 - `AXIEL_TOGETHER_API_KEY` real
 - rotação das chaves que já foram expostas durante a configuração

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import parse_qsl, quote, unquote, urlencode, urlsplit, urlunsplit
 import os
 import time
 import tomllib
@@ -185,11 +185,56 @@ def _load_local_secrets() -> dict[str, Any]:
         return tomllib.load(handle)
 
 
+@lru_cache(maxsize=1)
+def _load_streamlit_secrets() -> dict[str, Any]:
+    try:
+        import streamlit as st
+    except Exception:
+        return {}
+
+    try:
+        return st.secrets.to_dict()
+    except AttributeError:
+        try:
+            return dict(st.secrets)
+        except Exception:
+            return {}
+    except Exception:
+        return {}
+
+
 def _get_setting(name: str, default: Any = None) -> Any:
     env_value = os.environ.get(name)
     if env_value not in (None, ""):
         return env_value
+
+    streamlit_secrets = _load_streamlit_secrets()
+    secret_containers = [
+        streamlit_secrets,
+        streamlit_secrets.get("supabase"),
+        streamlit_secrets.get("database"),
+    ]
+    for container in secret_containers:
+        if not isinstance(container, dict):
+            continue
+        value = container.get(name)
+        if value not in (None, ""):
+            return value
+
     return _load_local_secrets().get(name, default)
+
+
+def _ensure_sslmode_required(dsn: str) -> str:
+    if "://" not in dsn:
+        return dsn
+
+    parsed = urlsplit(dsn)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    if "sslmode" in query:
+        return dsn
+
+    query["sslmode"] = "require"
+    return urlunsplit(parsed._replace(query=urlencode(query)))
 
 
 def _normalize_postgres_dsn(raw_dsn: str | None) -> str | None:
@@ -200,19 +245,128 @@ def _normalize_postgres_dsn(raw_dsn: str | None) -> str | None:
         return raw_dsn
     scheme, rest = raw_dsn.split("://", 1)
     if "@" not in rest:
-        return raw_dsn
+        return _ensure_sslmode_required(raw_dsn)
     credentials, host = rest.rsplit("@", 1)
     if ":" not in credentials:
-        return raw_dsn
+        return _ensure_sslmode_required(raw_dsn)
     user, password = credentials.split(":", 1)
-    return f"{scheme}://{user}:{quote(password, safe='')}@{host}"
+    normalized_password = quote(unquote(password), safe="")
+    return _ensure_sslmode_required(f"{scheme}://{user}:{normalized_password}@{host}")
+
+
+def _get_dsn_host_label(dsn: str) -> str:
+    if "://" not in dsn:
+        return "host-desconhecido"
+
+    parsed = urlsplit(dsn)
+    host = (parsed.hostname or "").lower()
+    port = parsed.port or 5432
+    if not host:
+        return "host-desconhecido"
+    return f"{host}:{port}"
+
+
+def _is_supabase_direct_connection(dsn: str) -> bool:
+    if "://" not in dsn:
+        return False
+
+    parsed = urlsplit(dsn)
+    host = (parsed.hostname or "").lower()
+    port = parsed.port or 5432
+    return host.startswith("db.") and host.endswith(".supabase.co") and port == 5432
+
+
+def _is_transaction_pooler_dsn(dsn: str) -> bool:
+    if "://" not in dsn:
+        return False
+
+    parsed = urlsplit(dsn)
+    return (parsed.port or 5432) == 6543
+
+
+def _classify_connection_error(error: Exception) -> str:
+    text = str(error).lower()
+    if "password authentication failed" in text or "authentication failed" in text:
+        return "falha de autenticacao"
+    if (
+        "could not translate host name" in text
+        or "name or service not known" in text
+        or "temporary failure in name resolution" in text
+        or "nodename nor servname provided" in text
+    ):
+        return "host invalido"
+    if "connection refused" in text:
+        return "conexao recusada"
+    if "timeout expired" in text or "timed out" in text:
+        return "timeout"
+    if (
+        "network is unreachable" in text
+        or "no route to host" in text
+        or "cannot assign requested address" in text
+        or "address family not supported" in text
+    ):
+        return "rede indisponivel"
+    if "ssl" in text:
+        return "erro de ssl"
+    return "falha de conexao"
+
+
+def _build_connection_error_message(dsn: str, error: Exception) -> str:
+    host_label = _get_dsn_host_label(dsn)
+    classification = _classify_connection_error(error)
+    reason_messages = {
+        "falha de autenticacao": "A autenticacao no Postgres falhou.",
+        "host invalido": "O host configurado nao respondeu ou o DNS nao foi resolvido.",
+        "conexao recusada": "O servidor recusou a conexao TCP.",
+        "timeout": "A conexao expirou antes de completar o handshake.",
+        "rede indisponivel": "A rede do deploy nao alcancou o host configurado.",
+        "erro de ssl": "A negociacao SSL/TLS falhou.",
+        "falha de conexao": "O Postgres nao aceitou a conexao.",
+    }
+    message = (
+        f"Falha ao conectar ao Supabase em `{host_label}`. "
+        f"{reason_messages.get(classification, reason_messages['falha de conexao'])}"
+    )
+
+    if _is_supabase_direct_connection(dsn):
+        return (
+            f"{message}\n\n"
+            "A URL configurada parece ser a conexao direta do Supabase "
+            "(`db.<project>.supabase.co:5432`), que costuma falhar na Streamlit "
+            "Community Cloud por depender de IPv6. Troque `SUPABASE_DB_URL` pela "
+            "URL do `Session pooler` ou do `Transaction pooler` no painel `Connect` "
+            "do Supabase."
+        )
+
+    if classification == "falha de autenticacao":
+        return (
+            f"{message}\n\n"
+            "Revise `SUPABASE_DB_URL`, confirme a senha atual do banco e cole a URL "
+            "exatamente como aparece no painel `Connect` do Supabase."
+        )
+
+    if classification == "erro de ssl":
+        return (
+            f"{message}\n\n"
+            "O app ja passa a exigir `sslmode=require` por padrao. Se voce sobrescreveu "
+            "a URL manualmente, verifique se o query string nao removeu esse parametro."
+        )
+
+    return (
+        f"{message}\n\n"
+        "Confira o secret `SUPABASE_DB_URL` em `App settings > Secrets` e prefira a "
+        "URL do pooler do Supabase no deploy."
+    )
 
 
 def _get_supabase_dsn() -> str:
-    raw_dsn = _get_setting("SUPABASE_DB_URL")
+    raw_dsn = _get_setting("SUPABASE_DB_URL") or _get_setting("DATABASE_URL")
     dsn = _normalize_postgres_dsn(str(raw_dsn)) if raw_dsn else None
     if not dsn:
-        raise RuntimeError("SUPABASE_DB_URL não configurado")
+        raise RuntimeError(
+            "SUPABASE_DB_URL nao configurado. Em Streamlit Community Cloud, defina "
+            "esse secret em `App settings > Secrets` usando a URL do pooler do Supabase."
+        )
     return dsn
 
 
@@ -249,24 +403,33 @@ def calculate_sleep_duration_hours(hora_dormir: str, hora_acordar: str) -> float
 
 def get_connection(backend: str | None = None) -> DBConnection:
     del backend
+    dsn = _get_supabase_dsn()
     last_error: Exception | None = None
     for attempt in range(1, _get_connect_retries() + 1):
         try:
             raw_connection = psycopg.connect(
-                _get_supabase_dsn(),
+                dsn,
                 row_factory=dict_row,
                 connect_timeout=_get_connect_timeout_seconds(),
             )
+            # Disable prepared statements so both session and transaction poolers behave consistently.
+            raw_connection.prepare_threshold = None
             return DBConnection(raw_connection)
         except psycopg.OperationalError as exc:
             last_error = exc
             if attempt == _get_connect_retries():
                 break
             time.sleep(min(1.5 * attempt, 4))
-    raise RuntimeError(
-        "Não foi possível conectar ao Supabase após múltiplas tentativas. "
-        "Se persistir, troque a conexão para o pooler do Supabase."
-    ) from last_error
+
+    message = _build_connection_error_message(dsn, last_error or RuntimeError("erro desconhecido"))
+    if _is_transaction_pooler_dsn(dsn):
+        message = (
+            f"{message}\n\n"
+            "A URL detectada usa a porta `6543`, que corresponde ao `Transaction pooler` "
+            "do Supabase. O app ja desabilita prepared statements para esse modo."
+        )
+    print(f"[biohack_analytics] {message.replace(chr(10), ' ')}")
+    raise RuntimeError(message) from last_error
 
 
 def init_db(backend: str | None = None) -> Path:

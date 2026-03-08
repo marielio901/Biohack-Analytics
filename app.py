@@ -16,6 +16,15 @@ def _ensure_app_initialized() -> None:
     init_db()
 
 
+def _render_startup_error(message: str) -> None:
+    st.error(message)
+    st.caption(
+        "No deploy da Streamlit Community Cloud, configure `SUPABASE_DB_URL` em "
+        "`App settings > Secrets` com a URL do pooler do Supabase."
+    )
+    st.stop()
+
+
 def main() -> None:
     st.set_page_config(
         page_title="BIOHACK ANALYTICS",
@@ -24,8 +33,11 @@ def main() -> None:
         initial_sidebar_state="expanded",
     )
 
-    _ensure_app_initialized()
     st.markdown(APP_STYLE, unsafe_allow_html=True)
+    try:
+        _ensure_app_initialized()
+    except RuntimeError as exc:
+        _render_startup_error(str(exc))
 
     menu = render_sidebar_menu()
 

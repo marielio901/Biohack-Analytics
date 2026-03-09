@@ -385,6 +385,120 @@ div[data-testid="stMetricValue"] {
     border-color: var(--line-strong) !important;
 }
 
+[data-baseweb="button-group"] {
+    background: rgba(18, 18, 18, 0.94) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    width: fit-content !important;
+    box-shadow: none !important;
+}
+
+[data-baseweb="button-group"] > div {
+    gap: 0 !important;
+}
+
+[data-baseweb="button-group"] button {
+    background: transparent !important;
+    color: var(--muted) !important;
+    border: 0 !important;
+    border-right: 1px solid rgba(0, 249, 149, 0.14) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transition:
+        background-color 160ms ease,
+        color 160ms ease,
+        box-shadow 160ms ease !important;
+}
+
+[data-baseweb="button-group"] button:last-child {
+    border-right: 0 !important;
+}
+
+[data-baseweb="button-group"] button *,
+[data-baseweb="button-group"] button span,
+[data-baseweb="button-group"] button p {
+    color: inherit !important;
+}
+
+[data-baseweb="button-group"] button:hover {
+    background: rgba(0, 249, 149, 0.07) !important;
+    color: var(--ink) !important;
+}
+
+[data-baseweb="button-group"] button[aria-pressed="true"],
+[data-baseweb="button-group"] button[aria-selected="true"],
+[data-baseweb="button-group"] button[aria-checked="true"],
+[data-baseweb="button-group"] button[data-selected="true"] {
+    background: linear-gradient(135deg, rgba(0, 249, 149, 0.16), rgba(0, 249, 149, 0.06)) !important;
+    color: var(--primary) !important;
+    box-shadow: inset 0 0 0 1px rgba(0, 249, 149, 0.5) !important;
+}
+
+[data-baseweb="button-group"] button:focus,
+[data-baseweb="button-group"] button:focus-visible {
+    outline: none !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 249, 149, 0.68) !important,
+        0 0 0 3px rgba(0, 249, 149, 0.12) !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] {
+    background: linear-gradient(180deg, rgba(11, 16, 27, 0.98), rgba(7, 11, 20, 0.98)) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42) !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] *,
+div[data-baseweb="popover"] div[data-baseweb="calendar"] span,
+div[data-baseweb="popover"] div[data-baseweb="calendar"] p {
+    color: var(--ink) !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] [data-baseweb="select"] > div,
+div[data-baseweb="popover"] div[data-baseweb="calendar"] [data-baseweb="input"] > div {
+    background: rgba(22, 27, 40, 0.98) !important;
+    border: 1px solid rgba(0, 249, 149, 0.18) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] button {
+    color: var(--ink) !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    transition:
+        background-color 160ms ease,
+        color 160ms ease,
+        box-shadow 160ms ease !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] button:hover {
+    background: rgba(0, 249, 149, 0.1) !important;
+    color: var(--primary) !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] button[aria-selected="true"],
+div[data-baseweb="popover"] div[data-baseweb="calendar"] button[aria-pressed="true"],
+div[data-baseweb="popover"] div[data-baseweb="calendar"] [aria-selected="true"] {
+    background: linear-gradient(135deg, rgba(0, 249, 149, 0.95), rgba(11, 209, 132, 0.82)) !important;
+    color: #08150f !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] button:focus,
+div[data-baseweb="popover"] div[data-baseweb="calendar"] button:focus-visible {
+    outline: none !important;
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 249, 149, 0.72) !important,
+        0 0 0 3px rgba(0, 249, 149, 0.12) !important;
+}
+
+div[data-baseweb="popover"] div[data-baseweb="calendar"] svg {
+    color: var(--primary) !important;
+    fill: currentColor !important;
+}
+
 .stSlider [data-baseweb="slider"] [role="slider"] {
     background: var(--primary) !important;
     border-color: var(--primary) !important;
@@ -538,11 +652,20 @@ div[data-testid="stMetricValue"] {
     color: var(--muted);
 }
 
+.stTabs [data-baseweb="tab"]:hover {
+    background: rgba(0, 249, 149, 0.07);
+    color: var(--ink);
+}
+
 .stTabs [aria-selected="true"] {
     background: rgba(0, 249, 149, 0.12);
     color: var(--primary);
     border-color: rgba(0, 249, 149, 0.62);
     box-shadow: 0 0 0 1px rgba(0, 249, 149, 0.12);
+}
+
+.stTabs [aria-selected="true"] * {
+    color: inherit !important;
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] {

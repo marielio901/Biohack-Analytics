@@ -230,10 +230,9 @@ def _ensure_sslmode_required(dsn: str) -> str:
 
     parsed = urlsplit(dsn)
     query = dict(parse_qsl(parsed.query, keep_blank_values=True))
-    if "sslmode" in query:
-        return dsn
-
-    query["sslmode"] = "require"
+    query.pop("pgbouncer", None)
+    if "sslmode" not in query:
+        query["sslmode"] = "require"
     return urlunsplit(parsed._replace(query=urlencode(query)))
 
 
@@ -286,6 +285,10 @@ def _is_transaction_pooler_dsn(dsn: str) -> bool:
 
 def _classify_connection_error(error: Exception) -> str:
     text = str(error).lower()
+    if 'invalid uri query parameter: "pgbouncer"' in text:
+        return "parametro pgbouncer invalido"
+    if "invalid dsn" in text or "invalid connection option" in text or "invalid uri" in text:
+        return "dsn invalido"
     if "password authentication failed" in text or "authentication failed" in text:
         return "falha de autenticacao"
     if (
@@ -315,6 +318,8 @@ def _build_connection_error_message(dsn: str, error: Exception) -> str:
     host_label = _get_dsn_host_label(dsn)
     classification = _classify_connection_error(error)
     reason_messages = {
+        "parametro pgbouncer invalido": "A URL contem um parametro que o psycopg nao aceita.",
+        "dsn invalido": "A URL de conexao esta malformada ou contem parametros invalidos.",
         "falha de autenticacao": "A autenticacao no Postgres falhou.",
         "host invalido": "O host configurado nao respondeu ou o DNS nao foi resolvido.",
         "conexao recusada": "O servidor recusou a conexao TCP.",
@@ -336,6 +341,21 @@ def _build_connection_error_message(dsn: str, error: Exception) -> str:
             "Community Cloud por depender de IPv6. Troque `SUPABASE_DB_URL` pela "
             "URL do `Session pooler` ou do `Transaction pooler` no painel `Connect` "
             "do Supabase."
+        )
+
+    if classification == "parametro pgbouncer invalido":
+        return (
+            f"{message}\n\n"
+            "O app usa psycopg e esse driver nao aceita `pgbouncer=true` na query string. "
+            "Use a mesma URL do pooler, mas remova `pgbouncer=true` e mantenha apenas "
+            "`sslmode=require`."
+        )
+
+    if classification == "dsn invalido":
+        return (
+            f"{message}\n\n"
+            "Revise `SUPABASE_DB_URL`. Se voce copiou a URL do pooler do Supabase, "
+            "remova `pgbouncer=true` da query string e mantenha `sslmode=require`."
         )
 
     if classification == "falha de autenticacao":
@@ -420,6 +440,10 @@ def get_connection(backend: str | None = None) -> DBConnection:
             if attempt == _get_connect_retries():
                 break
             time.sleep(min(1.5 * attempt, 4))
+        except psycopg.ProgrammingError as exc:
+            message = _build_connection_error_message(dsn, exc)
+            print(f"[biohack_analytics] {message.replace(chr(10), ' ')}")
+            raise RuntimeError(message) from exc
 
     message = _build_connection_error_message(dsn, last_error or RuntimeError("erro desconhecido"))
     if _is_transaction_pooler_dsn(dsn):

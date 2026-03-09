@@ -443,28 +443,28 @@ div[data-testid="stMetricValue"] {
         0 0 0 3px rgba(0, 249, 149, 0.12) !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] {
+[data-baseweb="calendar"] {
     background: linear-gradient(180deg, rgba(11, 16, 27, 0.98), rgba(7, 11, 20, 0.98)) !important;
     border: 1px solid var(--line) !important;
     border-radius: 20px !important;
     box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42) !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] *,
-div[data-baseweb="popover"] div[data-baseweb="calendar"] span,
-div[data-baseweb="popover"] div[data-baseweb="calendar"] p {
+[data-baseweb="calendar"] *,
+[data-baseweb="calendar"] span,
+[data-baseweb="calendar"] p {
     color: var(--ink) !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] [data-baseweb="select"] > div,
-div[data-baseweb="popover"] div[data-baseweb="calendar"] [data-baseweb="input"] > div {
+[data-baseweb="calendar"] [data-baseweb="select"] > div,
+[data-baseweb="calendar"] [data-baseweb="input"] > div {
     background: rgba(22, 27, 40, 0.98) !important;
     border: 1px solid rgba(0, 249, 149, 0.18) !important;
     border-radius: 12px !important;
     box-shadow: none !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] button {
+[data-baseweb="calendar"] button {
     color: var(--ink) !important;
     border-radius: 12px !important;
     box-shadow: none !important;
@@ -474,27 +474,40 @@ div[data-baseweb="popover"] div[data-baseweb="calendar"] button {
         box-shadow 160ms ease !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] button:hover {
+[data-baseweb="calendar"] button:hover {
     background: rgba(0, 249, 149, 0.1) !important;
     color: var(--primary) !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] button[aria-selected="true"],
-div[data-baseweb="popover"] div[data-baseweb="calendar"] button[aria-pressed="true"],
-div[data-baseweb="popover"] div[data-baseweb="calendar"] [aria-selected="true"] {
+[data-baseweb="calendar"] button[aria-selected="true"],
+[data-baseweb="calendar"] button[aria-pressed="true"],
+[data-baseweb="calendar"] [aria-selected="true"] {
     background: linear-gradient(135deg, rgba(0, 249, 149, 0.95), rgba(11, 209, 132, 0.82)) !important;
     color: #08150f !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] button:focus,
-div[data-baseweb="popover"] div[data-baseweb="calendar"] button:focus-visible {
+[data-baseweb="calendar"] button[aria-selected="true"] *,
+[data-baseweb="calendar"] button[aria-selected="true"] > *,
+[data-baseweb="calendar"] button[aria-selected="true"] > * > *,
+[data-baseweb="calendar"] button[aria-pressed="true"] *,
+[data-baseweb="calendar"] [aria-selected="true"] *,
+[data-baseweb="calendar"] [aria-selected="true"]::before,
+[data-baseweb="calendar"] [aria-selected="true"]::after {
+    background: linear-gradient(135deg, rgba(0, 249, 149, 0.95), rgba(11, 209, 132, 0.82)) !important;
+    border-color: rgba(0, 249, 149, 0.72) !important;
+    color: #08150f !important;
+    fill: currentColor !important;
+}
+
+[data-baseweb="calendar"] button:focus,
+[data-baseweb="calendar"] button:focus-visible {
     outline: none !important;
     box-shadow:
         inset 0 0 0 1px rgba(0, 249, 149, 0.72) !important,
         0 0 0 3px rgba(0, 249, 149, 0.12) !important;
 }
 
-div[data-baseweb="popover"] div[data-baseweb="calendar"] svg {
+[data-baseweb="calendar"] svg {
     color: var(--primary) !important;
     fill: currentColor !important;
 }
@@ -644,12 +657,24 @@ div[data-baseweb="popover"] div[data-baseweb="calendar"] svg {
     gap: 0.55rem;
 }
 
+.stTabs [data-baseweb="tab-highlight"] {
+    background: var(--primary) !important;
+    height: 0.16rem !important;
+    border-radius: 999px !important;
+}
+
+.stTabs [data-baseweb="tab-border"] {
+    background: rgba(0, 249, 149, 0.16) !important;
+    height: 1px !important;
+}
+
 .stTabs [data-baseweb="tab"] {
     background: rgba(28, 28, 28, 0.95);
     border: 1px solid var(--line);
     border-radius: 14px;
     padding: 0.6rem 1rem;
     color: var(--muted);
+    border-bottom-color: rgba(0, 249, 149, 0.22);
 }
 
 .stTabs [data-baseweb="tab"]:hover {
@@ -662,6 +687,7 @@ div[data-baseweb="popover"] div[data-baseweb="calendar"] svg {
     color: var(--primary);
     border-color: rgba(0, 249, 149, 0.62);
     box-shadow: 0 0 0 1px rgba(0, 249, 149, 0.12);
+    border-bottom-color: rgba(0, 249, 149, 0.75);
 }
 
 .stTabs [aria-selected="true"] * {
